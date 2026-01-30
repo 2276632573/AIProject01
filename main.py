@@ -2,7 +2,7 @@ from typing import Union
 from fastapi import FastAPI, Depends, Response
 from sqlmodel import SQLModel, Field, Session
 from dotenv import load_dotenv
-from config.database import get_session
+from config.database import get_session, get_simple_session
 from entity.User import User
 from models.UserModel import UserModel
 import os
@@ -30,7 +30,7 @@ def testdb(session: Session = Depends(get_session)):
     return {"id": new_user.id, "name": new_user.name, "type": new_user.type}
 
 @app.post("/user/save")
-def save_user(userModel: User, session: Session = Depends(get_session)) -> User:
+def save_user(userModel: User, session: Session = Depends(get_simple_session)) -> User:
     if not userModel.id:
         # return {"error": "User not found"}
         new_user = User(
@@ -38,6 +38,8 @@ def save_user(userModel: User, session: Session = Depends(get_session)) -> User:
             type=userModel.type
         )
         session.add(new_user)
+        session.commit()
+        session.refresh(new_user)
         # session.flush()
         # session.refresh(new_user)
         return new_user
@@ -48,6 +50,8 @@ def save_user(userModel: User, session: Session = Depends(get_session)) -> User:
         existing_user.name = userModel.name
         existing_user.type = userModel.type
         session.add(existing_user)
+        session.commit()
+        session.refresh(existing_user)
         # session.flush()
         # print("Received userModel:", userModel)
 

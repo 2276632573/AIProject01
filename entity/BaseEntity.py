@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from pydantic import field_validator
-from sqlmodel import SQLModel, Field, column
+from sqlmodel import SQLModel, Field, Session, column
 
 class BaseEntity(SQLModel, table=False):
     create_time: Optional[datetime] = None
@@ -19,7 +19,32 @@ class BaseEntity(SQLModel, table=False):
             return bool(v)
         return v
     
-    __mapper_args__ = {
-        "version_id_col": "version",
-        "version_id_generator": False,
-    }
+    def increment_version(self):
+        if self.version is None:
+            self.version = 1
+        else:
+            self.version += 1
+
+    @classmethod
+    def update_with_version(
+        cls,
+        session: Session,
+        obj_id: int,
+        update_data: dict,
+        expected_version: int
+    ):
+        obj = session.get(cls, obj_id)
+        if obj is None:
+            raise ValueError("Object not found")
+        if obj.version != expected_version:
+            raise ValueError("Version conflict detected")
+        
+        for key, value in update_data.items():
+            if hasattr(obj, key):
+                setattr(obj, key, value)
+        
+        obj.increment_version()
+        session.add(obj)
+        session.commit()
+        session.refresh(obj)
+        return obj

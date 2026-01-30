@@ -24,5 +24,10 @@ def get_session():
             yield session
             session.commit()
         except Exception as e:
+            print("Exception occurred:", e)
             session.rollback()
             raise e
+
+def get_simple_session():
+    engine = get_engine()
+    return Session(engine)
