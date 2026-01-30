@@ -30,7 +30,7 @@ def testdb(session: Session = Depends(get_session)):
 
 @app.post("/user/save")
 def save_user(userModel: User, session: Session = Depends(get_session)) -> User:
-    
+    print("Received userModel:", userModel)
     if not userModel.id:
         # return {"error": "User not found"}
         new_user = User.model_validate(userModel)
