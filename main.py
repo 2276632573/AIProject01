@@ -4,6 +4,7 @@ from sqlmodel import SQLModel, Field, Session
 from dotenv import load_dotenv
 from config.database import get_session
 from entity.User import User
+from models.UserModel import UserModel
 import os
 
 load_dotenv()
@@ -30,23 +31,27 @@ def testdb(session: Session = Depends(get_session)):
 
 @app.post("/user/save")
 def save_user(userModel: User, session: Session = Depends(get_session)) -> User:
-    print("Received userModel:", userModel)
     if not userModel.id:
         # return {"error": "User not found"}
-        new_user = User.model_validate(userModel)
+        new_user = User(
+            name=userModel.name,
+            type=userModel.type
+        )
         session.add(new_user)
-        session.flush()
-        session.refresh(new_user)
+        # session.flush()
+        # session.refresh(new_user)
         return new_user
     else:
         existing_user: User | None = session.get(User, userModel.id)
         if not existing_user:
-            return userModel
+            return existing_user
         existing_user.name = userModel.name
         existing_user.type = userModel.type
         session.add(existing_user)
-        session.flush()
-        return userModel
+        # session.flush()
+        # print("Received userModel:", userModel)
+
+        return existing_user
         # return {"id": existing_user.id, "name": existing_user.name, "type": existing_user.type}
     
 
